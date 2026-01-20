@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, List, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, List, Settings, User, LogOut } from 'lucide-react'
 
 export default function Sidebar({ onSignOut }) {
     const location = useLocation()
@@ -8,6 +8,7 @@ export default function Sidebar({ onSignOut }) {
         { name: 'Dashboard', path: '/', icon: LayoutDashboard },
         { name: 'Transactions', path: '/transactions', icon: List },
         { name: 'Categories', path: '/categories', icon: Settings },
+        { name: 'Profile', path: '/profile', icon: User },
     ]
 
     return (
@@ -28,8 +29,8 @@ export default function Sidebar({ onSignOut }) {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-                                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                                ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
                                 }`}
                         >
                             <Icon size={20} />
