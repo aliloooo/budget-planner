@@ -7,4 +7,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Prevent crash if env vars are missing, allowing ErrorBoundary to catch the usage error
+export const supabase = (supabaseUrl && supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : {
+        auth: {
+            getSession: () => Promise.reject(new Error('Missing Supabase Environment Variables')),
+            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
+            signInWithPassword: () => Promise.reject(new Error('Missing Supabase Environment Variables')),
+            signUp: () => Promise.reject(new Error('Missing Supabase Environment Variables')),
+            signOut: () => Promise.reject(new Error('Missing Supabase Environment Variables')),
+        },
+        from: () => ({
+            select: () => ({
+                eq: () => ({
+                    single: () => Promise.reject(new Error('Missing Supabase Environment Variables'))
+                })
+            })
+        })
+    }
