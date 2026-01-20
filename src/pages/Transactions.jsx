@@ -2,14 +2,19 @@ import { useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
 import { useCategories } from '../hooks/useCategories'
 import Layout from '../components/Layout'
-import { Plus, Trash2, Edit2, X, ChevronLeft, ChevronRight, Filter, Search, Loader2, Download } from 'lucide-react'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import { Plus, Trash2, Edit2, ChevronLeft, ChevronRight, Download, Loader2, Calendar, Tag, FileText, DollarSign, AlignLeft } from 'lucide-react'
 import { format, addMonths, subMonths, parseISO } from 'date-fns'
 import { formatCurrency } from '../lib/formatCurrency'
 
 export default function Transactions() {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const { transactions, isLoading, addTransaction, updateTransaction, deleteTransaction } = useTransactions(currentMonth)
-    const { categories } = useCategories() // For dropdown
+    const { categories } = useCategories()
 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingItem, setEditingItem] = useState(null)
@@ -37,7 +42,6 @@ export default function Transactions() {
         } else {
             setEditingItem(null)
             setFormData(initialFormState)
-            // If categories exist, default detailed category selection could be improved, but 'required' works
         }
         setIsModalOpen(true)
     }
@@ -78,7 +82,7 @@ export default function Transactions() {
                     t.categories?.name || 'Uncategorized',
                     t.type,
                     t.amount,
-                    `"${(t.description || '').replace(/"/g, '""')}"` // Escape quotes
+                    `"${(t.description || '').replace(/"/g, '""')}"`
                 ]
                 return row.join(',')
             })
@@ -95,200 +99,227 @@ export default function Transactions() {
 
     return (
         <Layout>
-            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Transactions</h1>
-                    <p className="text-gray-500 text-sm">Manage your income and expenses</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Manage your income and expenses</p>
                 </div>
 
-                <div className="flex items-center gap-4 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                    <button onClick={() => handleMonthChange('prev')} className="p-2 hover:bg-gray-100 rounded-lg">
-                        <ChevronLeft size={20} />
-                    </button>
-                    <span className="font-semibold w-32 text-center">
-                        {format(currentMonth, 'MMMM yyyy')}
-                    </span>
-                    <button onClick={() => handleMonthChange('next')} className="p-2 hover:bg-gray-100 rounded-lg">
-                        <ChevronRight size={20} />
-                    </button>
-                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2 bg-surface p-1 rounded-xl shadow-sm border border-border">
+                        <button onClick={() => handleMonthChange('prev')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300">
+                            <ChevronLeft size={20} />
+                        </button>
+                        <span className="font-semibold w-32 text-center text-gray-800 dark:text-gray-200 text-sm">
+                            {format(currentMonth, 'MMMM yyyy')}
+                        </span>
+                        <button onClick={() => handleMonthChange('next')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300">
+                            <ChevronRight size={20} />
+                        </button>
+                    </div>
 
-                <div className="flex gap-2">
-                    <button
-                        onClick={handleExport}
-                        className="flex items-center gap-2 bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition"
-                    >
-                        <Download size={18} />
-                        Export
-                    </button>
-                    <button
-                        onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                    >
-                        <Plus size={18} />
-                        Add Transaction
-                    </button>
+                    <div className="flex gap-2">
+                        <Button variant="secondary" onClick={handleExport} className="hidden sm:flex">
+                            <Download size={18} className="mr-2" />
+                            Export
+                        </Button>
+                        <Button variant="primary" onClick={() => handleOpenModal()}>
+                            <Plus size={18} className="mr-2" />
+                            Add
+                        </Button>
+                    </div>
                 </div>
             </div>
 
             {isLoading ? (
-                <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600" /></div>
+                <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary-600" /></div>
             ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <Card noPadding className="mb-24 md:mb-0">
                     {transactions?.length === 0 ? (
-                        <div className="p-10 text-center text-gray-400">
+                        <div className="p-10 text-center text-gray-400 dark:text-gray-500">
                             No transactions found for this month.
                         </div>
                     ) : (
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-semibold">
-                                <tr>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Category</th>
-                                    <th className="px-6 py-4">Description</th>
-                                    <th className="px-6 py-4">Type</th>
-                                    <th className="px-6 py-4 text-right">Amount</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
+                        <>
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">
+                                        <tr>
+                                            <th className="px-6 py-4">Date</th>
+                                            <th className="px-6 py-4">Category</th>
+                                            <th className="px-6 py-4">Description</th>
+                                            <th className="px-6 py-4">Type</th>
+                                            <th className="px-6 py-4 text-right">Amount</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                        {transactions?.map((t) => (
+                                            <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                                    {format(parseISO(t.transaction_date), 'dd MMM yyyy')}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="px-3 py-1 rounded-full text-xs font-medium w-fit flex items-center gap-2"
+                                                        style={{ backgroundColor: t.categories?.color ? `${t.categories.color}20` : '#f3f4f6', color: t.categories?.color || '#374151' }}>
+                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.categories?.color || '#9ca3af' }} />
+                                                        {t.categories?.name || 'Uncategorized'}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
+                                                    {t.description || '-'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${t.type === 'income'
+                                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                        }`}>
+                                                        {t.type}
+                                                    </span>
+                                                </td>
+                                                <td className={`px-6 py-4 text-right font-medium whitespace-nowrap ${t.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'
+                                                    }`}>
+                                                    {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
+                                                </td>
+                                                <td className="px-6 py-4 text-right whitespace-nowrap">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => handleOpenModal(t)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition">
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button onClick={() => handleDelete(t.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile List View */}
+                            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
                                 {transactions?.map((t) => (
-                                    <tr key={t.id} className="hover:bg-gray-50 transition">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {format(parseISO(t.transaction_date), 'dd MMM yyyy')}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="px-3 py-1 rounded-full text-xs font-medium w-fit flex items-center gap-2"
-                                                style={{ backgroundColor: t.categories?.color ? `${t.categories.color}20` : '#f3f4f6', color: t.categories?.color || '#374151' }}>
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.categories?.color || '#9ca3af' }} />
-                                                {t.categories?.name || 'Uncategorized'}
+                                    <div key={t.id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition active:bg-gray-100" onClick={() => handleOpenModal(t)}>
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-xs shadow-sm"
+                                                style={{ backgroundColor: t.categories?.color || '#9ca3af' }}>
+                                                {t.categories?.name?.[0] || '?'}
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
-                                            {t.description || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${t.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                {t.type}
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                        {t.description || t.categories?.name || 'Untitled'}
+                                                    </p>
+                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${t.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                        {t.type}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                    <Calendar size={10} />
+                                                    {format(parseISO(t.transaction_date), 'dd MMM')}
+                                                    <span className="mx-1">•</span>
+                                                    {t.categories?.name || 'Uncategorized'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1 pl-2">
+                                            <span className={`font-semibold text-sm whitespace-nowrap ${t.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'
+                                                }`}>
+                                                {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                                             </span>
-                                        </td>
-                                        <td className={`px-6 py-4 text-right font-medium whitespace-nowrap ${t.type === 'income' ? 'text-green-600' : 'text-gray-900'}`}>
-                                            {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
-                                        </td>
-                                        <td className="px-6 py-4 text-right whitespace-nowrap">
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => handleOpenModal(t)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded">
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button onClick={() => handleDelete(t.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                        </div>
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+                        </>
                     )}
-                </div>
+                </Card>
             )}
 
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold">{editingItem ? 'Edit Transaction' : 'New Transaction'}</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <X size={24} />
-                            </button>
-                        </div>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                                    <select
-                                        value={formData.type}
-                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    >
-                                        <option value="expense">Expense</option>
-                                        <option value="income">Income</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        step="0.01"
-                                        value={formData.amount}
-                                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={editingItem ? 'Edit Transaction' : 'New Transaction'}
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <Select
+                            label="Type"
+                            value={formData.type}
+                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                            icon={AlignLeft} // Just an icon placeholder
+                        >
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </Select>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                <select
-                                    value={formData.category_id}
-                                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                    required
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories?.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                                {categories?.length === 0 && <p className="text-xs text-red-500 mt-1">Please create categories first.</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={formData.transaction_date}
-                                    onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
-                                <textarea
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    rows="3"
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                                    placeholder="What was this for?"
-                                />
-                            </div>
-
-                            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={addTransaction.isPending || updateTransaction.isPending}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                    {(addTransaction.isPending || updateTransaction.isPending) && <Loader2 className="animate-spin" size={16} />}
-                                    Save Transaction
-                                </button>
-                            </div>
-                        </form>
+                        <Input
+                            label="Amount"
+                            type="number"
+                            required
+                            min="0"
+                            step="0.01"
+                            value={formData.amount}
+                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                            placeholder="0.00"
+                            icon={DollarSign}
+                        />
                     </div>
-                </div>
-            )}
+
+                    <Select
+                        label="Category"
+                        value={formData.category_id}
+                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                        required
+                        icon={Tag}
+                    >
+                        <option value="">Select Category</option>
+                        {categories?.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </Select>
+                    {categories?.length === 0 && <p className="text-xs text-red-500 mt-1">Please create categories first.</p>}
+
+                    <Input
+                        label="Date"
+                        type="date"
+                        required
+                        value={formData.transaction_date}
+                        onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
+                        icon={Calendar}
+                    />
+
+                    <div>
+                        <Input
+                            label="Description (Optional)"
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="What was this for?"
+                            icon={FileText}
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            isLoading={addTransaction.isPending || updateTransaction.isPending}
+                        >
+                            Save Transaction
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </Layout>
     )
 }
